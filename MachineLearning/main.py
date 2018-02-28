@@ -1,64 +1,46 @@
-from scipy import special, optimize
 import numpy as np
-import os
-import matplotlib  as plt
-from MachineLearning.lib import *
-from mpl_toolkits.mplot3d import Axes3D
-from sklearn import  *
-import math
-
-data = np.matrix('[10, 30, 14, 16, 32, 9, 24, 20, 22, 20, 19, 26, 27; '
-                     '1,8,2,2,9,1,6,4,5,4,4,6,7]')
-size = data.shape
-
-y = np.array([])
-y = np.append(y, data[0])
-x = np.array([[1,1,1,1,1,1,1,1,1,1,1,1,1],
-              [1,8,2,2,9,1,6,4,5,4,4,6,7],
-              [2,4,2,2,3,2,3,2,3,2,2,4,4],
-              [1,2,1,1,2,1,2,1,2,1,1,3,3]])
-teta0, teta1 = 0, 0
-teta2, teta3 = 0, 0
-grown = 0.05
-
-def cost_funct(xi):
-    sum = 0
-    hypo = 0
-    for i in range(13):
-        hypo = teta0 * x[0][i] + teta1 * x[1][i] + teta2 * (x[2][i]) + teta3 * (x[3][i])
-        hypo = (hypo - y[i]) * x[xi][i]
-        sum = sum + hypo
-
-    sum = (1/13) * sum
-    return sum
+import matplotlib.pyplot as plt
+import seaborn as sns; sns.set()
+from sklearn.naive_bayes import GaussianNB
+from sklearn.datasets.samples_generator import make_blobs
+from sklearn.svm import SVC
+from mpl_toolkits import mplot3d
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.learning_curve import learning_curve
+from sklearn.learning_curve import validation_curve
+from sklearn.grid_search import GridSearchCV
+from sklearn.datasets import fetch_20newsgroups
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import confusion_matrix
 
 
-for i in range(10000):
-    temp0 = teta0 - grown * (cost_funct(0))
-    temp1 = teta1 - grown * (cost_funct(1))
-    temp2 = teta2 - grown * (cost_funct(2))
-    temp3 = teta3 - grown * (cost_funct(3))
-    teta0 = temp0
-    teta1 = temp1
-    teta2 = temp2
-    teta3 = temp3
+data = fetch_20newsgroups()
+categories = ['talk.religion.misc', 'soc.religion.christian',
+              'sci.space', 'comp.graphics']
+train = fetch_20newsgroups(subset='train', categories=categories)
+test = fetch_20newsgroups(subset='test', categories=categories)
 
-teta = np.array([teta0, teta1, teta2, teta3])
-print(teta)
+model = make_pipeline(TfidfVectorizer(), MultinomialNB())
+model.fit(train.data, train.target)
+labels = model.predict(test.data)
 
-plt.title('Regression')
-plt.xlabel("X")
-plt.ylabel("Y")
-plt.grid(True)
+mat = confusion_matrix(test.target, labels)
+sns.heatmap(mat.T, square=True, annot=True, fmt='d', cbar=False,
+            xticklabels=train.target_names, yticklabels=train.target_names)
+plt.xlabel('true label')
+plt.ylabel('predicted label')
 
-for i in range(size[1]):
-    plt.scatter(data[1, i], data[0, i])
+def predict_category(s, train=train, model=model):
+    pred = model.predict([s])
+    return train.target_names[pred[0]]
 
-z = np.array([0, 2, 3, 4, 5, 6, 7, 8, 10])
-z1 = np.array([2,4,2,2,3,2,3,2,3,2,2,4,4])
-z2 = np.array([1,2,1,1,2,1,2,1,2,1,1,3,3])
-hypo = np.array([])
-for i in range(9):
-    hypo = np.append(hypo, [(teta[0] + teta[1] * z[i] + teta2 * z1[i] + teta3 * z2[i])])
-plt.plot(z, hypo)
-plt.show()
+
+
+print('The cosmos is something that is not curbed by human and our consciousness: \n', predict_category('The cosmos is something that is not curbed by human and our consciousness'))
+print('God is an illusion of peace and quiet. For the people that are afraid of the truth\n', predict_category('God is an illusion of peace and quiet. For the people that are afraid of the truth'))
+print('Religion is a doctrine of God that helps to quickly forget reality and live like a blind cat in the lie about the world\n', predict_category('Religion is a doctrine of God that helps to quickly forget reality and live like a blind cat in the lie about the world'))
+print('Graphics is the way to tell something to anyone or is used everywhere\n', predict_category('Graphics is the way to tell something to anyone or is used everywhere'))
+# plt.show()

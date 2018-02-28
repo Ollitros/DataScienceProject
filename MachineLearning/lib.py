@@ -210,3 +210,43 @@ def ml_multiclass_regression():
         hypo = np.append(hypo, [(teta[0] + teta[1] * z[i] + teta2 * z1[i] + teta3 * z2[i])])
     plt.plot(z, hypo)
     plt.show()
+
+
+
+def sklearn_multiple_LR():
+    x = np.array(np.random.rand(2, 100))
+    X = x.T
+    y = 3 * x[0] + 2 * x[1] - 1.5 + np.random.rand(100)
+    plt.scatter(x[0], y, s=40, cmap='viridis')
+
+    model = LinearRegression()
+    model.fit(X, y)
+    xfit = np.array([np.linspace(-1, 2), np.linspace(-1, 2)])
+    yfit = model.predict(xfit.T)
+    plt.plot(xfit[0], yfit)
+    plt.show()
+
+
+def sklearn_grid_polimenal_LR():
+    def PolynomialRegression(degree=2, **kwargs):
+        return make_pipeline(PolynomialFeatures(degree),
+                             LinearRegression(**kwargs))
+
+    x = np.array(np.random.rand(1, 100))
+    X = x.T
+    y = 2.5 * (X.ravel()) ** 2 - 1.5 + np.random.rand(100)
+    plt.scatter(x, y, s=40, cmap='viridis')
+
+    param_grid = {'polynomialfeatures__degree': np.arange(21),
+                  'linearregression__fit_intercept': [True, False],
+                  'linearregression__normalize': [True, False]}
+
+    grid = GridSearchCV(PolynomialRegression(), param_grid)
+    grid.fit(X, y)
+    print(grid.best_params_)
+    model = grid.best_estimator_
+    Xfit = np.linspace(-0.1, 1.1, 500)[:, None]
+    model.fit(X, y)
+    yfit = model.predict(Xfit)
+    plt.plot(Xfit.ravel(), yfit, hold=True)
+    plt.show()
