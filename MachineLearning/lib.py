@@ -250,3 +250,183 @@ def sklearn_grid_polimenal_LR():
     yfit = model.predict(Xfit)
     plt.plot(Xfit.ravel(), yfit, hold=True)
     plt.show()
+
+
+
+def PERCEPTRON():
+    class Perceptron(object):
+
+        def __init__(self, eta=0.01, n_iter=10):
+            self.eta = eta
+            self.n_iter = n_iter
+
+        def fit(self, X, y):
+            self.w_ = np.zeros(1 + X.shape[1])
+            self.errors_ = []
+            print(self.w_)
+
+            for _ in range(self.n_iter):
+                errors = 0
+                for xi, target in zip(X, y):
+                    update = self.eta * (target - self.predict(xi))
+                    self.w_[1:] += update * xi
+                    self.w_[0] += update
+                    errors += int(update != 0.0)
+                self.errors_.append(errors)
+            print(self.w_)
+            return self
+
+        def net_input(self, X):
+            return np.dot(X, self.w_[1:]) + self.w_[0]
+
+        def predict(self, X):
+            return np.where(self.net_input(X) >= 0.0, 1, -1)
+
+    def plot_decision_regions(X, y, classifier, resolution=0.02):
+        # setup marker generator and color map
+        markers = ('s', 'x', 'o', '^', 'v')
+        colors = ('red', 'blue', 'lightgreen', 'gray', 'cyan')
+        cmap = ListedColormap(colors[:len(np.unique(y))])
+        # plot the decision surface
+        x1_min, x1_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+        x2_min, x2_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+        xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, resolution),
+                               np.arange(x2_min, x2_max, resolution))
+        Z = classifier.predict(np.array([xx1.ravel(), xx2.ravel()]).T)
+        Z = Z.reshape(xx1.shape)
+        plt.contourf(xx1, xx2, Z, alpha=0.4, cmap=cmap)
+        plt.xlim(xx1.min(), xx1.max())
+        plt.ylim(xx2.min(), xx2.max())
+        # plot class samples
+        for idx, cl in enumerate(np.unique(y)):
+            plt.scatter(x=X[y == cl, 0], y=X[y == cl, 1], alpha=0.8, c=cmap(idx), marker=markers[idx], label=cl)
+
+    df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data', header=None)
+    y = df.iloc[0:100, 4].values
+    y = np.where(y == 'Iris-setosa', -1, 1)
+    X = df.iloc[0:100, [0, 2]].values
+    plt.scatter(X[:50, 0], X[:50, 1], color='red', marker='o', label='setosa')
+    plt.scatter(X[50:100, 0], X[50:100, 1], color='blue', marker='x', label='versicolor')
+    plt.xlabel('sepal length')
+    plt.ylabel('petal length')
+    plt.legend(loc='upper left')
+    plt.show()
+
+    ppn = Perceptron(eta=0.1, n_iter=10)
+    ppn.fit(X, y)
+    plt.plot(range(1, len(ppn.errors_) + 1), ppn.errors_, marker='o')
+    plt.xlabel('Epochs')
+    plt.ylabel('Number of misclassifications')
+    plt.show()
+
+    plot_decision_regions(X, y, classifier=ppn)
+    plt.xlabel('sepal length [cm]')
+    plt.ylabel('petal length [cm]')
+    plt.legend(loc='upper left')
+    plt.show()
+
+
+
+def plot_decision_regions(X, y, classifier, test_idx=None, resolution=0.02):
+    markers = ('s', 'x', 'o', '^', 'v')
+    colors = ('red', 'blue', 'lightgreen', 'gray', 'cyan')
+    cmap = ListedColormap(colors[:len(np.unique(y))])
+    # plot the decision surface
+    x1_min, x1_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    x2_min, x2_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, resolution),
+                           np.arange(x2_min, x2_max, resolution))
+    Z = classifier.predict(np.array([xx1.ravel(), xx2.ravel()]).T)
+    Z = Z.reshape(xx1.shape)
+    plt.contourf(xx1, xx2, Z, alpha=0.4, cmap=cmap)
+    plt.xlim(xx1.min(), xx1.max())
+    plt.ylim(xx2.min(), xx2.max())
+    # plot all samples
+    for idx, cl in enumerate(np.unique(y)):
+        plt.scatter(x=X[y == cl, 0], y=X[y == cl, 1],
+                    alpha=0.8, c=cmap(idx),
+                    marker=markers[idx], label=cl)
+
+    # highlight test samples
+    if test_idx:
+        X_test, y_test = X[test_idx, :], y[test_idx]
+        plt.scatter(X_test[:, 0], X_test[:, 1], c='',
+                alpha=1.0, linewidths=1, marker='o',
+                s=55, label='test set')
+
+
+""" PROBLEMS WITH THE DOWNLOAD DATA AND STACK INTO THE DATAFRAME !!!!!!!!!!!!!!
+        wine = datasets.load_wine()
+        x = np.array(wine.data)
+        y = np.array(wine.target)
+        y = y[:, np.newaxis]
+        x = np.hstack((x,y))
+        df = pd.DataFrame(x)
+        print(df)
+"""
+
+
+
+
+""" HOW to LOAD DIGITS FOR NEURAL NETWORK !!!!!!!!!!!!
+    #Code from Python ML by Rashka on In chapter 12
+
+    # http://yann.lecun.com/exdb/mnist/    ---------- Download page
+    
+    def load_mnist(path, kind='train'):
+        labels_path = os.path.join(path,'%s-labels.idx1-ubyte' % kind)
+        images_path = os.path.join(path,'%s-images.idx3-ubyte' % kind)
+    
+        with open(labels_path, 'rb') as lbpath:
+            magic, n = struct.unpack('>II', lbpath.read(8))
+            labels = np.fromfile(lbpath, dtype=np.uint8)
+    
+    
+        with open(images_path, 'rb') as imgpath:
+            magic, num, rows, cols = struct.unpack(">IIII", imgpath.read(16))
+            images = np.fromfile(imgpath, dtype=np.uint8).reshape(len(labels), 784)
+    
+    
+        return images, labels
+    
+    
+    X_train, y_train = load_mnist('D:\DOWNLOADS\DOWNLOADS')
+    
+    fig, ax = plt.subplots(nrows=2, ncols=5, sharex=True, sharey=True,)
+    ax = ax.flatten()
+    for i in range(10):
+        img = X_train[y_train == 2][i].reshape(28, 28)
+        ax[i].imshow(img, cmap='Greys', interpolation='nearest')
+    ax[0].set_xticks([])
+    ax[0].set_yticks([])
+    plt.tight_layout()
+    plt.show()
+    print(X_train[y_train==0][0].reshape(28,28))
+    
+    np.savetxt('train_img.csv', X_train,fmt='%i', delimiter=',')
+    np.savetxt('train_labels.csv', y_train,fmt='%i', delimiter=',')
+    np.savetxt('test_img.csv', X_test,fmt='%i', delimiter=',')
+    np.savetxt('test_labels.csv', y_test, fmt='%i', delimiter=',')
+
+    
+    X_train = np.genfromtxt('train_img.csv',dtype=int, delimiter=',')
+    y_train = np.genfromtxt('train_labels.csv',dtype=int, delimiter=',')
+    X_test = np.genfromtxt('test_img.csv',dtype=int, delimiter=',')
+    y_test = np.genfromtxt('test_labels.csv',dtype=int, delimiter=',')
+
+"""
+
+
+
+"""
+
+   1) Open cmd
+   2) Go to dir where is main.py (not dir where lies graph)
+   3) Execute command:
+   python -m tensorboard.main --logdir=[PATH_TO_LOGDIR]
+   4) Open url which shown
+   
+
+
+
+"""
