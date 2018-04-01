@@ -427,6 +427,7 @@ def plot_decision_regions(X, y, classifier, test_idx=None, resolution=0.02):
    4) Open url which shown
    
 
-
+   #I have a http://DESKTOP-28DHEA5:6006 url now
+   #If tensorboard cant display data - try do it: ' python -m tensorboard.main --logdir summary_logs ' 
 
 """
