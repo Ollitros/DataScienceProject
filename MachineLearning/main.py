@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
 from sklearn.naive_bayes import GaussianNB
 from sklearn.datasets.samples_generator import make_blobs
 from sklearn.svm import SVC
@@ -18,5 +17,7 @@ from sklearn.metrics import confusion_matrix
 
 
 
-a = np.array([1,2,3,4,5,6,7,8,9])
-print(a[0:5])
+a = np.array([10, 2, 2, 1])
+b = np.array([10, 2, 2, 1])
+a[3] = a[3] + b[3]
+print(a)

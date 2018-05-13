@@ -47,6 +47,22 @@ def model_conv2d():
     print(score)
 
 
+    ##### With using layers #####
+
+    # inputs = Input(shape=input_shape)
+    # convolve = Conv2D(32, kernel_size=(3, 3), padding='same')(inputs)
+    # activate = Activation('relu')(convolve)
+    # max_pool = MaxPool2D(pool_size=(2, 2))(activate)
+    # dropout = Dropout(0.25)(max_pool)
+    # flat = Flatten()(dropout)
+    # all_together = Dense(128, activation='relu')(flat)
+    # dropout = Dropout(0.5)(all_together)
+    # predict = Dense(10, activation='softmax')(dropout)
+
+    # model = Model(inputs=inputs, outputs=predict)
+
+
+
 """SEQUENTIAL MODEL"""
 
 
@@ -95,4 +111,5 @@ def model_model():
     model.fit(x_train, y_train, batch_size=1000, epochs=100)
     score = model.evaluate(x_test, y_test, batch_size=1000)
     print(score)
+
 
