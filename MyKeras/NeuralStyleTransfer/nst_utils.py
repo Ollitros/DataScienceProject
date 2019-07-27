@@ -19,8 +19,8 @@ class CONFIG:
     NOISE_RATIO = 0.9
     MEANS = np.array([123.68, 116.779, 103.939]).reshape((1, 1, 1, 3))
     VGG_MODEL = 'data/pretrained-model/imagenet-vgg-verydeep-19.mat'  # Pick the VGG 19-layer model by from the paper "Very Deep Convolutional Networks for Large-Scale Image Recognition".
-    STYLE_IMAGE = 'data/input_img/louvre_small.jpg'  # Style image to use.
-    CONTENT_IMAGE = 'data/input_img/monet.jpg'  # Content image to use.
+    CONTENT_IMAGE = 'data/input_img/louvre_small.jpg'  # Style image to use.
+    STYLE_IMAGE = 'data/input_img/monet.jpg'  # Content image to use.
     OUTPUT_DIR = 'data/output_img'
     WORKING_DIR = "d:/PROJECTS/PyCharmProjects/MyProject/DataScienceProject/MyKeras/NeuralStyleTransfer"
     STYLE_LAYERS = [

@@ -45,12 +45,12 @@ sess.run(model['input'].assign(style_image))
 # Compute the style cost
 J_style = compute_style_cost(sess, model, STYLE_LAYERS)
 
-J = total_cost(J_content, J_style,  alpha = 10, beta = 40)
-optimizer = tf.train.AdamOptimizer(2.0)
+J = total_cost(J_content, J_style,  alpha = 1000, beta = 40)
+optimizer = tf.train.AdamOptimizer(0.1)
 train_step = optimizer.minimize(J)
 
 
-def model_nn(sess, input_image, num_iterations=200):
+def model_nn(sess, input_image, num_iterations=10000):
     # Initialize global variables (you need to run the session on the initializer)
     ### START CODE HERE ### (1 line)
     sess.run(tf.global_variables_initializer())
@@ -89,4 +89,5 @@ def model_nn(sess, input_image, num_iterations=200):
 
     return generated_image
 
-model_nn(sess, generated_image)
+with tf.device('/gpu:0'):
+    model_nn(sess, generated_image)
