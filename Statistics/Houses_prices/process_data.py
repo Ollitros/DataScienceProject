@@ -11,8 +11,8 @@ sns.set()
 # 1) Load the data from csv
 # ###
 
-train = pd.read_csv('data/houses_prices/train.csv')
-test = pd.read_csv('data/houses_prices/test.csv')
+train = pd.read_csv('data/raw_data/train.csv')
+test = pd.read_csv('data/raw_data/test.csv')
 print(train.columns)
 
 description = train['SalePrice'].describe()
@@ -215,3 +215,5 @@ plt.show()
 train = pd.get_dummies(train)
 print(train.columns)
 print(train)
+
+train.to_csv('data/processed_data/train_processed.csv')
