@@ -75,35 +75,58 @@ def handle_missing_data(train, test):
     # test = test.drop((missing_data_test[missing_data_test['Total'] > 1]).index, 1)
 
     # Delete columns with high rate of missing vales
-    train = train.drop((missing_data_train[missing_data_train['Total'] > 1]).index, 1)
     train = train.drop(['Utilities'], axis=1)
-
-    test = test.drop((missing_data_test[missing_data_test['Total'] > 4]).index, 1)
     test = test.drop(['Utilities'], axis=1)
+
+    sale_price = train.loc[:, train.columns == 'SalePrice']
+
+    train = train.loc[:, train.columns != 'SalePrice']
+    print(len(train.columns))
+
+    # Unite train and test dataset
+    data = pd.concat((train, test)).reset_index(drop=True)
+
 
     # Deal with missing values by not deleting them
     # Train dataset
-    train['Electrical'] = train['Electrical'].fillna(train['Electrical'].mode()[0])
 
     # Test dataset
-    test['MSZoning'] = test['MSZoning'].fillna(test['MSZoning'].mode()[0])
-    test['BsmtHalfBath'] = test['BsmtHalfBath'].fillna(0)
-    test['BsmtFullBath'] = test['BsmtFullBath'].fillna(0)
-    test["Functional"] = test["Functional"].fillna("Typ")
-    test['BsmtFinSF2'] = test['BsmtFinSF2'].fillna(0)
-    test['BsmtFinSF1'] = test['BsmtFinSF1'].fillna(0)
-    test['Exterior1st'] = test['Exterior1st'].fillna(test['Exterior1st'].mode()[0])
-    test['Exterior2nd'] = test['Exterior2nd'].fillna(test['Exterior2nd'].mode()[0])
-    test['BsmtUnfSF'] = test['BsmtUnfSF'].fillna(0)
-    test['TotalBsmtSF'] = test['TotalBsmtSF'].fillna(0)
-    test['SaleType'] = test['SaleType'].fillna(test['SaleType'].mode()[0])
-    test['GarageCars'] = test['GarageCars'].fillna(0)
-    test['GarageArea'] = test['GarageArea'].fillna(0)
-    test['KitchenQual'] = test['KitchenQual'].fillna(test['KitchenQual'].mode()[0])
+    data["PoolQC"] = data["PoolQC"].fillna("None")
+    data["MiscFeature"] = data["MiscFeature"].fillna("None")
+    data["Alley"] = data["Alley"].fillna("None")
+    data["Fence"] = data["Fence"].fillna("None")
+    data["FireplaceQu"] = data["FireplaceQu"].fillna("None")
+    data["LotFrontage"] = data.groupby("Neighborhood")["LotFrontage"].transform(
+        lambda x: x.fillna(x.median()))
+    for col in ('GarageType', 'GarageFinish', 'GarageQual', 'GarageCond'):
+        data[col] = data[col].fillna('None')
+
+    for col in ('GarageYrBlt', 'GarageArea', 'GarageCars'):
+        data[col] = data[col].fillna(0)
+    for col in ('BsmtFinSF1', 'BsmtFinSF2', 'BsmtUnfSF', 'TotalBsmtSF', 'BsmtFullBath', 'BsmtHalfBath'):
+        data[col] = data[col].fillna(0)
+    for col in ('BsmtQual', 'BsmtCond', 'BsmtExposure', 'BsmtFinType1', 'BsmtFinType2'):
+        data[col] = data[col].fillna('None')
+
+    data["MasVnrType"] = data["MasVnrType"].fillna("None")
+    data["MasVnrArea"] = data["MasVnrArea"].fillna(0)
+    data['MSZoning'] = data['MSZoning'].fillna(data['MSZoning'].mode()[0])
+    data["Functional"] = data["Functional"].fillna("Typ")
+    data['Electrical'] = data['Electrical'].fillna(data['Electrical'].mode()[0])
+    data['KitchenQual'] = data['KitchenQual'].fillna(data['KitchenQual'].mode()[0])
+    data['Exterior1st'] = data['Exterior1st'].fillna(data['Exterior1st'].mode()[0])
+    data['Exterior2nd'] = data['Exterior2nd'].fillna(data['Exterior2nd'].mode()[0])
+    data['SaleType'] = data['SaleType'].fillna(data['SaleType'].mode()[0])
+    data['MSSubClass'] = data['MSSubClass'].fillna("None")
 
     print(train.isnull().sum().max())
     print(test.isnull().sum().max())
     print(train, test)
+
+    train = data[:1460]
+    test = data[1460:]
+
+    train = pd.concat((train, sale_price), axis=1)
 
     return train, test
 
@@ -145,7 +168,7 @@ def handle_outliers(train):
     return train
 
 
-def handle_normality(train):
+def handle_normality(train, test):
 
     fig = plt.figure()
     res = stats.probplot(train['SalePrice'], plot=plt)
@@ -169,22 +192,22 @@ def handle_normality(train):
     # # # Lets do it with GrLivArea
     # # #
 
-    # fig = plt.figure()
-    # res = stats.probplot(train['GrLivArea'], plot=plt)
-    # plt.title('GrLivArea ProbPlot before')
-    # plt.show()
-    #
-    # train['GrLivArea'] = np.log(train['GrLivArea'])
-    # test['GrLivArea'] = np.log(test['GrLivArea'])
-    #
-    # fig = plt.figure()
-    # res = stats.probplot(train['GrLivArea'], plot=plt)
-    # plt.title('GrLivArea ProbPlot After')
-    # plt.show()
-    #
-    # sns.distplot(train['GrLivArea'])
-    # plt.title('GrLivArea In NORM')
-    # plt.show()
+    fig = plt.figure()
+    res = stats.probplot(train['GrLivArea'], plot=plt)
+    plt.title('GrLivArea ProbPlot before')
+    plt.show()
+
+    train['GrLivArea'] = np.log(train['GrLivArea'])
+    test['GrLivArea'] = np.log(test['GrLivArea'])
+
+    fig = plt.figure()
+    res = stats.probplot(train['GrLivArea'], plot=plt)
+    plt.title('GrLivArea ProbPlot After')
+    plt.show()
+
+    sns.distplot(train['GrLivArea'])
+    plt.title('GrLivArea In NORM')
+    plt.show()
 
     # # # #
     # # # # Lets do it again with TotalBsmtSF
@@ -278,16 +301,20 @@ def handle_skew(data):
     skewed_feats = data[numeric_feats].apply(lambda x: skew(x.dropna())).sort_values(ascending=False)
     print("\nSkew in numerical features: \n")
     skewness = pd.DataFrame({'Skew': skewed_feats})
-    skewness.head(10)
+    print(skewness)
 
     skewness = skewness[abs(skewness) > 0.75]
     print("There are {} skewed numerical features to Box Cox transform".format(skewness.shape[0]))
 
     from scipy.special import boxcox1p
+
     skewed_features = skewness.index
     lam = 0.15
     for feat in skewed_features:
+
         # all_data[feat] += 1
+        if feat == 'Id':
+            continue
         data[feat] = boxcox1p(data[feat], lam)
 
     return data
@@ -363,7 +390,7 @@ def main():
     # 5.1) Normality
     # ###
 
-    train = handle_normality(train)
+    train = handle_normality(train, test)
 
     # ###
     # 5.2) Homoscedasticity

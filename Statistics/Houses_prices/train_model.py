@@ -4,13 +4,19 @@ from sklearn.linear_model import LinearRegression, SGDRegressor, Lasso
 from sklearn.model_selection import cross_val_score, train_test_split, GridSearchCV
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import PolynomialFeatures, StandardScaler, RobustScaler
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler, RobustScaler, MinMaxScaler, Normalizer
 from sklearn.ensemble import BaggingRegressor
+from sklearn.neural_network import MLPRegressor
 
 
 train_data = pd.read_csv('data/processed_data/train_processed.csv')
+test_data = pd.read_csv('data/processed_data/test_processed.csv')
+
 trainX = np.asarray(train_data.loc[:, train_data.columns != 'SalePrice'].values)
 trainY = np.asarray(train_data['SalePrice'].values)
+
+trainX = np.nan_to_num(trainX)
+trainY = np.nan_to_num(trainY)
 
 trainX, testX, trainY, testY = train_test_split(trainX, trainY, test_size=0.2)
 print(trainX.shape, trainY.shape)
@@ -30,9 +36,9 @@ model = make_pipeline(RobustScaler(), Lasso(alpha=best_params['lasso__alpha'], r
 model = BaggingRegressor(base_estimator=model, n_estimators=10)
 model.fit(trainX, trainY)
 prediction = model.predict(testX)
+print(best_params)
 
 # Evaluation
-print(best_params)
 mean_squared_error_score = mean_squared_error(testY, prediction)
 val_score = cross_val_score(model, trainX, trainY)
 r2_score = r2_score(testY, prediction)
