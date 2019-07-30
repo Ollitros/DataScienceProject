@@ -421,7 +421,7 @@ def plot_decision_regions(X, y, classifier, test_idx=None, resolution=0.02):
 """
 
    1) Open cmd
-   2) Go to dir where is main.py (not dir where lies graph)
+   2) Go to dir where is process_data.py (not dir where lies graph)
    3) Execute command:
    python -m tensorboard.main --logdir=[PATH_TO_LOGDIR]
    4) Open url which shown

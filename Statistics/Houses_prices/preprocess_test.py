@@ -212,43 +212,43 @@ def handle_normality(train, test):
     # # # #
     # # # # Lets do it again with TotalBsmtSF
     # # # #
-    #
-    # fig = plt.figure()
-    # res = stats.probplot(train['TotalBsmtSF'], plot=plt)
-    # plt.title('TotalBsmtSF ProbPlot before')
-    # plt.show()
-    #
-    # sns.distplot(train['TotalBsmtSF'])
-    # plt.title('TotalBsmtSF Without NORM')
-    # plt.show()
-    #
-    # # Ok, now we are dealing with the big boss. What do we have here?
-    # #   I) Something that, in general, presents skewness.
-    # #   II) A significant number of observations with value zero (houses without basement).
-    # #   III) A big problem because the value zero doesn't allow us to do log transformations.
-    # # To apply a log transformation here, we'll create a variable that can get the effect of having or not having basement
-    # # (binary variable). Then, we'll do a log transformation to all the non-zero observations, ignoring those
-    # # with value zero. This way we can transform data, without losing the effect of having or not basement.
-    #
+
+    fig = plt.figure()
+    res = stats.probplot(train['TotalBsmtSF'], plot=plt)
+    plt.title('TotalBsmtSF ProbPlot before')
+    plt.show()
+
+    sns.distplot(train['TotalBsmtSF'])
+    plt.title('TotalBsmtSF Without NORM')
+    plt.show()
+
+    # Ok, now we are dealing with the big boss. What do we have here?
+    #   I) Something that, in general, presents skewness.
+    #   II) A significant number of observations with value zero (houses without basement).
+    #   III) A big problem because the value zero doesn't allow us to do log transformations.
+    # To apply a log transformation here, we'll create a variable that can get the effect of having or not having basement
+    # (binary variable). Then, we'll do a log transformation to all the non-zero observations, ignoring those
+    # with value zero. This way we can transform data, without losing the effect of having or not basement.
+
     # # create column for new variable (one is enough because it's a binary categorical feature)
     # # if area>0 it gets 1, for area==0 it gets 0
     # train['HasBsmt'] = pd.Series(len(train['TotalBsmtSF']), index=train.index)
     # train['HasBsmt'] = 0
     # train.loc[train['TotalBsmtSF'] > 0, 'HasBsmt'] = 1
-    #
+#
     # test['HasBsmt'] = pd.Series(len(test['TotalBsmtSF']), index=test.index)
     # test['HasBsmt'] = 0
     # test.loc[test['TotalBsmtSF'] > 0, 'HasBsmt'] = 1
-    #
+#
     # # Transform data
     # train.loc[train['HasBsmt'] == 1, 'TotalBsmtSF'] = np.log(train['TotalBsmtSF'])
     # test.loc[train['HasBsmt'] == 1, 'TotalBsmtSF'] = np.log(test['TotalBsmtSF'])
-    #
+#
     # # Histogram and normal probability plot
     # sns.distplot(train[train['TotalBsmtSF'] > 0]['TotalBsmtSF'])
     # plt.title('TotalBsmtSF with Norm')
     # plt.show()
-    #
+#
     # fig = plt.figure()
     # res = stats.probplot(train[train['TotalBsmtSF'] > 0]['TotalBsmtSF'], plot=plt)
     # plt.title('TotalBsmtSF ProbPlot after')
@@ -331,7 +331,9 @@ def handle_dummy(train, test):
     print(len(train.columns))
 
     # Unite train and test dataset
-    data = pd.concat((train, test)).reset_index(drop=True)
+    # data = pd.concat((train, test)).reset_index(drop=True)
+    train = train.reset_index(drop=True)
+    data = pd.concat([train, test])
 
     # Make categorical transformation
     data = make_categorical(data)
@@ -339,18 +341,29 @@ def handle_dummy(train, test):
     # Handle with skew data
     # data = handle_skew(data)
 
+
     # Get dummies
     data = pd.get_dummies(data)
 
+    print(train)
+    print(test)
     train = data[:1458]
     test = data[1458:]
 
-    train_merged = pd.concat((train, sale_price), axis=1)
+    print(train)
+    print(test)
+
+    train['SalePrice'] = sale_price.values
+
+    # train = data[:1457]
+    # test = data[1457:]
+
+    # train_merged = pd.concat((train, sale_price), axis=1)
     print(sale_price)
-    print(len(train_merged.columns))
+    print(len(train.columns))
     print(len(test.columns))
 
-    return train_merged, test
+    return train, test
 
 
 def main():
