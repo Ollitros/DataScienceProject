@@ -34,14 +34,16 @@ trainY = np.asarray(train_data['SalePrice'].values)
 
 trainX = np.nan_to_num(trainX)
 trainY = np.nan_to_num(trainY)
+test_data_n = np.nan_to_num(test_data)
+
 
 trainX, testX, trainY, testY = train_test_split(trainX, trainY, test_size=0.2)
 print(trainX.shape, trainY.shape)
 print(testX.shape, testY.shape)
 
 # Ensemble learning
-model = make_pipeline(Lasso(alpha=0.5))
-model = BaggingRegressor(base_estimator=model, n_estimators=100)
+model = make_pipeline(LinearRegression())
+model = BaggingRegressor(base_estimator=model, n_estimators=1)
 model.fit(trainX, trainY)
 prediction = model.predict(testX)
 
@@ -56,15 +58,15 @@ print("r2_score: ", r2_score)
 print(prediction[0:10])
 print(trainY[0:10])
 
-test = model.predict(test_data.values)
+test = model.predict(test_data_n)
 test_transformed = np.exp(test)
 submission = pd.DataFrame(data={'Id': np.int32(test_data['Id'].values), 'SalePrice': test_transformed})
 submission.to_csv('data/my_submission.csv', index=False)
 
 
-# score = rmsle_cv_train(model)
-# print("\nTrain Score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
-# score = rmsle_cv_test(model)
-# print("\nTest Score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+score = rmsle_cv_train(model)
+print("\nTrain Score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+score = rmsle_cv_test(model)
+print("\nTest Score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
 
 
