@@ -1,12 +1,25 @@
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LinearRegression, SGDRegressor, Lasso
-from sklearn.model_selection import cross_val_score, train_test_split, GridSearchCV
+from sklearn.model_selection import cross_val_score, train_test_split, GridSearchCV, KFold
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler, RobustScaler, MinMaxScaler, Normalizer
-from sklearn.ensemble import BaggingRegressor
-from sklearn.neural_network import MLPRegressor
+from sklearn.ensemble import BaggingRegressor, RandomForestRegressor, GradientBoostingRegressor
+
+# Validation function
+n_folds = 5
+
+
+def rmsle_cv_test(model):
+    kf = KFold(n_folds, shuffle=True, random_state=42).get_n_splits(testX)
+    rmse= np.sqrt(-cross_val_score(model, testX, testY, scoring="neg_mean_squared_error", cv=kf))
+    return(rmse)
+
+
+def rmsle_cv_train(model):
+    kf = KFold(n_folds, shuffle=True, random_state=42).get_n_splits(trainX)
+    rmse= np.sqrt(-cross_val_score(model, trainX, trainY, scoring="neg_mean_squared_error", cv=kf))
+    return(rmse)
 
 
 train_data = pd.read_csv('data/processed_data/train_processed.csv')
@@ -17,30 +30,23 @@ trainY = np.asarray(train_data['SalePrice'].values)
 
 trainX = np.nan_to_num(trainX)
 trainY = np.nan_to_num(trainY)
+test_data_n = np.nan_to_num(test_data)
+
 
 trainX, testX, trainY, testY = train_test_split(trainX, trainY, test_size=0.2)
 print(trainX.shape, trainY.shape)
 print(testX.shape, testY.shape)
 
-# Grid Search
-model = make_pipeline(RobustScaler(), Lasso(random_state=1))
-features_params = np.linspace(0, 0.005, num=100)
-param_grid = [{'lasso__alpha': features_params}]
-gs = GridSearchCV(estimator=model, param_grid=param_grid)
-
-gs = gs.fit(trainX, trainY)
-best_params = gs.best_params_
-
 # Ensemble learning
-model = make_pipeline(RobustScaler(), Lasso(alpha=best_params['lasso__alpha'], random_state=1))
+model = make_pipeline(RobustScaler(), Lasso(alpha=0.0005, max_iter=8000))
 model = BaggingRegressor(base_estimator=model, n_estimators=10)
 model.fit(trainX, trainY)
 prediction = model.predict(testX)
-print(best_params)
+
 
 # Evaluation
 mean_squared_error_score = mean_squared_error(testY, prediction)
-val_score = cross_val_score(model, trainX, trainY)
+val_score = cross_val_score(model, testX, testY)
 r2_score = r2_score(testY, prediction)
 print("mean_squared_error_score: ", mean_squared_error_score)
 print("val_score: ", val_score, val_score.mean())
@@ -49,7 +55,18 @@ print("r2_score: ", r2_score)
 print(prediction[0:10])
 print(trainY[0:10])
 
+test = np.reshape(model.predict(test_data_n), (-1))
+print(test)
+test_transformed = np.exp(test)
+print(test_transformed)
 
-with open("data/results.txt", "a") as file:
-    file.write("|||\nModel: {},\n mean_squared_error_score:{}, val_score: {}, r2_score: {}\n\n".format(
-        model, mean_squared_error_score, val_score.mean(), r2_score))
+submission = pd.DataFrame(data={'Id': np.int32(test_data['Id'].values), 'SalePrice': test_transformed})
+submission.to_csv('data/my_submission.csv', index=False)
+
+
+score = rmsle_cv_train(model)
+print("\nTrain Score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+score = rmsle_cv_test(model)
+print("\nTest Score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+
+
