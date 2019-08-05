@@ -22,13 +22,63 @@ def load_data():
 
 def make_some_overview(train):
 
+    train_corr = train.copy()
+
+    cols = ('Sex', 'Embarked')
+
+    for c in cols:
+       lbl = LabelEncoder()
+       lbl.fit(list(train_corr[c].values))
+       train_corr[c] = lbl.transform(list(train_corr[c].values))
+
     # Make correlation analysis
-    corrmat = train.corr()
+    corrmat = train_corr.corr()
     f, ax = plt.subplots(figsize=(10, 10))
     sns.heatmap(corrmat, square=True)
     plt.show()
 
-    print(train.describe())
+    print(train_corr.describe())
+
+    cols = corrmat.nlargest(10, 'Survived')['Survived'].index
+    cm = np.corrcoef(train_corr[cols].values.T)
+    sns.set(font_scale=1.25)
+    f, ax = plt.subplots(figsize=(10, 10))
+    hm = sns.heatmap(cm, cbar=True, annot=True, square=True, fmt='.2f', annot_kws={'size': 10}, yticklabels=cols.values,
+                     xticklabels=cols.values)
+    plt.show()
+
+    # Print most correlated features
+    print(train_corr[['Pclass', 'Survived']].groupby(['Pclass'], as_index=False).mean().sort_values(by='Survived',
+                                                                                                    ascending=False))
+    print(train_corr[["Sex", "Survived"]].groupby(['Sex'], as_index=False).mean().sort_values(by='Survived', ascending=False))
+
+    # Print most no-correlated features
+    print(train_corr[["SibSp", "Survived"]].groupby(['SibSp'], as_index=False).mean().sort_values(by='Survived', ascending=False))
+
+    print(train_corr[["Parch", "Survived"]].groupby(['Parch'], as_index=False).mean().sort_values(by='Survived', ascending=False))
+
+    # Visualize Age-Survived distribution
+    g = sns.FacetGrid(train_corr, col='Survived')
+    g.map(plt.hist, 'Age', bins=20)
+    plt.show()
+
+    # Visualize Age-Pclass-Survived distribution
+    grid = sns.FacetGrid(train_corr, col='Survived', row='Pclass', size=2.2, aspect=1.6)
+    grid.map(plt.hist, 'Age', alpha=.5, bins=20)
+    grid.add_legend()
+    plt.show()
+
+    # Visualize Sex-Pclass-Survived  from Embarked distribution
+    grid = sns.FacetGrid(train, row='Embarked', size=2.2, aspect=1.6)
+    grid.map(sns.pointplot, 'Pclass', 'Survived', 'Sex', palette='deep')
+    grid.add_legend()
+    plt.show()
+
+    # Visualize Sex-Fare-Survived  from Embarked distribution
+    grid = sns.FacetGrid(train, row='Embarked', col='Survived', size=2.2, aspect=1.6)
+    grid.map(sns.barplot, 'Sex', 'Fare', alpha=.5, ci=None)
+    grid.add_legend()
+    plt.show()
 
 
 def handle_missing_data(data):
@@ -62,6 +112,15 @@ def handle_missing_data(data):
     data['Embarked'] = data['Embarked'].fillna(data['Embarked'].mode()[0])
     data['Fare'] = data['Fare'].fillna(data['Fare'].median())
 
+    # Combine several features into one
+    data['FamilySize'] = data['SibSp'] + data['Parch'] + 1
+    data['IsAlone'] = 0
+    data.loc[data['FamilySize'] == 1, 'IsAlone'] = 1
+
+    # Delete unimportant features
+    data = data.drop(['Parch', 'SibSp', 'FamilySize'], axis=1)
+
+    print(data.head())
     # Check again
     print('Missing data:', data.isnull().sum().max())
 
@@ -69,9 +128,9 @@ def handle_missing_data(data):
 
 
 def make_data_categorical(data, survived):
-    # Make data categorical
+    # # Make data categorical
     # cols = ('Sex', 'Embarked')
-    #
+
     # for c in cols:
     #     lbl = LabelEncoder()
     #     lbl.fit(list(data[c].values))

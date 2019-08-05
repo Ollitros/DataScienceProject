@@ -21,7 +21,7 @@ print(testX.shape, testY.shape)
 
 # Ensemble learning
 model = make_pipeline(RandomForestClassifier(n_estimators=100))
-model = BaggingClassifier(base_estimator=model, n_estimators=1)
+model = BaggingClassifier(base_estimator=model, n_estimators=100)
 model.fit(trainX, trainY)
 prediction = model.predict(testX)
 
