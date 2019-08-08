@@ -6,6 +6,9 @@ import pandas as pd
 import cv2 as cv
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import adfuller, kpss
+from statsmodels.tsa.stattools import acf, pacf
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.stattools import grangercausalitytests
 from dateutil.parser import parse
 
 sns.set()
@@ -279,3 +282,284 @@ print('p-value: %f' % result[1])
 for key, value in result[3].items():
     print('Critial Values:')
     print(f'   {key}, {value}')
+
+
+'''
+
+            How to detrend a time series?
+    
+'''
+
+# Using statmodels: Subtracting the Trend Component.
+df = pd.read_csv('https://raw.githubusercontent.com/selva86/datasets/master/a10.csv', parse_dates=['date'], index_col='date')
+result_mul = seasonal_decompose(df['value'], model='multiplicative', extrapolate_trend='freq')
+detrended = df.value.values - result_mul.trend
+plt.plot(detrended)
+plt.title('Drug Sales detrended by subtracting the trend component', fontsize=16)
+plt.show()
+
+
+'''
+
+        How to deseasonalize a time series?
+        
+    There are multiple approaches to deseasonalize a time series as well. Below are a few:
+
+    - 1. Take a moving average with length as the seasonal window. This will smoothen in series in the process.
+
+    - 2. Seasonal difference the series (subtract the value of previous season from the current value)
+
+    - 3. Divide the series by the seasonal index obtained from STL decomposition
+
+'''
+
+# Subtracting the Trend Component.
+df = pd.read_csv('https://raw.githubusercontent.com/selva86/datasets/master/a10.csv', parse_dates=['date'], index_col='date')
+
+# Time Series Decomposition
+result_mul = seasonal_decompose(df['value'], model='multiplicative', extrapolate_trend='freq')
+
+# Deseasonalize
+deseasonalized = df.value.values / result_mul.seasonal
+
+# Plot
+plt.plot(deseasonalized)
+plt.title('Drug Sales Deseasonalized', fontsize=16)
+plt.plot()
+plt.show()
+
+
+'''
+
+        How to treat missing values in a time series?
+        
+    Sometimes, your time series will have missing dates/times. That means, the data was not captured 
+    or was not available for those periods. It could so happen the measurement was zero on those days, 
+    in which case, case you may fill up those periods with zero.
+
+    Secondly, when it comes to time series, you should typically NOT replace missing values with the mean 
+    of the series, especially if the series is not stationary. What you could do instead for a quick and 
+    dirty workaround is to forward-fill the previous value.
+
+    However, depending on the nature of the series, you want to try out multiple approaches before concluding. 
+    Some effective alternatives to imputation are:
+
+    Backward Fill
+    Linear Interpolation
+    Quadratic interpolation
+    Mean of nearest neighbors
+    Mean of seasonal couterparts
+    
+    To measure the imputation performance, I manually introduce missing values to the time series, impute it 
+    with above approaches and then measure the mean squared error of the imputed against the actual values.
+
+'''
+
+
+'''
+    
+        What is autocorrelation and partial autocorrelation functions?
+        
+    Autocorrelation is simply the correlation of a series with its own lags. 
+    If a series is significantly autocorrelated, that means, the previous values 
+    of the series (lags) may be helpful in predicting the current value.
+    
+    Partial Autocorrelation also conveys similar information but it conveys the pure 
+    correlation of a series and its lag, excluding the correlation contributions from the intermediate lags.
+
+'''
+
+df = pd.read_csv('https://raw.githubusercontent.com/selva86/datasets/master/a10.csv')
+
+# Calculate ACF and PACF upto 50 lags
+# acf_50 = acf(df.value, nlags=50)
+# pacf_50 = pacf(df.value, nlags=50)
+
+# Draw Plot
+fig, axes = plt.subplots(1,2,figsize=(16,3), dpi= 100)
+plot_acf(df.value.tolist(), lags=50, ax=axes[0])
+plot_pacf(df.value.tolist(), lags=50, ax=axes[1])
+plt.show()
+
+
+'''
+
+        Lag Plots
+        
+    A Lag plot is a scatter plot of a time series against a lag of itself. It is 
+    normally used to check for autocorrelation. If there is any pattern existing in 
+    the series like the one you see below, the series is autocorrelated. If there is 
+    no such pattern, the series is likely to be random white noise.
+
+    In below example on Sunspots area time series, the plots get more and more scattered as the n_lag increases.
+
+'''
+
+from pandas.plotting import lag_plot
+plt.rcParams.update({'ytick.left' : False, 'axes.titlepad':10})
+
+# Import
+ss = pd.read_csv('https://raw.githubusercontent.com/selva86/datasets/master/sunspotarea.csv')
+a10 = pd.read_csv('https://raw.githubusercontent.com/selva86/datasets/master/a10.csv')
+
+# Plot
+fig, axes = plt.subplots(1, 4, figsize=(10,3), sharex=True, sharey=True, dpi=100)
+for i, ax in enumerate(axes.flatten()[:4]):
+    lag_plot(ss.value, lag=i+1, ax=ax, c='firebrick')
+    ax.set_title('Lag ' + str(i+1))
+
+fig.suptitle('Lag Plots of Sun Spots Area \n(Points get wide and scattered with increasing lag -> lesser correlation)\n', y=1.15)
+
+fig, axes = plt.subplots(1, 4, figsize=(10,3), sharex=True, sharey=True, dpi=100)
+for i, ax in enumerate(axes.flatten()[:4]):
+    lag_plot(a10.value, lag=i+1, ax=ax, c='firebrick')
+    ax.set_title('Lag ' + str(i+1))
+
+fig.suptitle('Lag Plots of Drug Sales', y=1.05)
+plt.show()
+
+
+'''
+
+        How to estimate the forecastability of a time series?
+        
+    The more regular and repeatable patterns a time series has, the easier it is to forecast. The ‘Approximate Entropy’ can be used to quantify the regularity and unpredictability of fluctuations in a time series.
+
+    The higher the approximate entropy, the more difficult it is to forecast it.
+
+    Another better alternate is the ‘Sample Entropy’.
+
+    Sample Entropy is similar to approximate entropy but is more consistent in estimating the complexity even for smaller time series. For example, a random time series with fewer data points can have a lower ‘approximate entropy’ than a more ‘regular’ time series, whereas, a longer random time series will have a higher ‘approximate entropy’.
+
+    Sample Entropy handles this problem nicely. See the demonstration below.
+
+    
+'''
+
+ss = pd.read_csv('https://raw.githubusercontent.com/selva86/datasets/master/sunspotarea.csv')
+a10 = pd.read_csv('https://raw.githubusercontent.com/selva86/datasets/master/a10.csv')
+rand_small = np.random.randint(0, 100, size=36)
+rand_big = np.random.randint(0, 100, size=136)
+
+
+def ApEn(U, m, r):
+    """Compute Aproximate entropy"""
+    def _maxdist(x_i, x_j):
+        return max([abs(ua - va) for ua, va in zip(x_i, x_j)])
+
+    def _phi(m):
+        x = [[U[j] for j in range(i, i + m - 1 + 1)] for i in range(N - m + 1)]
+        C = [len([1 for x_j in x if _maxdist(x_i, x_j) <= r]) / (N - m + 1.0) for x_i in x]
+        return (N - m + 1.0)**(-1) * sum(np.log(C))
+
+    N = len(U)
+    return abs(_phi(m+1) - _phi(m))
+
+
+print(ApEn(ss.value, m=2, r=0.2*np.std(ss.value)))     # 0.651
+print(ApEn(a10.value, m=2, r=0.2*np.std(a10.value)))   # 0.537
+print(ApEn(rand_small, m=2, r=0.2*np.std(rand_small))) # 0.143
+print(ApEn(rand_big, m=2, r=0.2*np.std(rand_big)))     # 0.716
+
+
+def SampEn(U, m, r):
+    """Compute Sample entropy"""
+    def _maxdist(x_i, x_j):
+        return max([abs(ua - va) for ua, va in zip(x_i, x_j)])
+
+    def _phi(m):
+        x = [[U[j] for j in range(i, i + m - 1 + 1)] for i in range(N - m + 1)]
+        C = [len([1 for j in range(len(x)) if i != j and _maxdist(x[i], x[j]) <= r]) for i in range(len(x))]
+        return sum(C)
+
+    N = len(U)
+    return -np.log(_phi(m+1) / _phi(m))
+
+
+print(SampEn(ss.value, m=2, r=0.2*np.std(ss.value)))      # 0.78
+print(SampEn(a10.value, m=2, r=0.2*np.std(a10.value)))    # 0.41
+print(SampEn(rand_small, m=2, r=0.2*np.std(rand_small)))  # 1.79
+print(SampEn(rand_big, m=2, r=0.2*np.std(rand_big)))      # 2.42
+
+
+'''
+    
+        Why and How to smoothen a time series?
+        
+    Smoothening of a time series may be useful in:
+    
+    Reducing the effect of noise in a signal get a fair approximation of the noise-filtered series.
+    The smoothed version of series can be used as a feature to explain the original series itself.
+    Visualize the underlying trend better
+    So how to smoothen a series? Let’s discuss the following methods:
+    
+    Take a moving average
+    Do a LOESS smoothing (Localized Regression)
+    Do a LOWESS smoothing (Locally Weighted Regression)
+    Moving average is nothing but the average of a rolling window of defined width. But you must choose 
+    the window-width wisely, because, large window-size will over-smooth the series. For example, a window-size 
+    equal to the seasonal duration (ex: 12 for a month-wise series), will effectively nullify the seasonal effect.
+    
+    LOESS, short for ‘LOcalized regrESSion’ fits multiple regressions in the local neighborhood of each point. 
+    It is implemented in the statsmodels package, where you can control the degree of smoothing using frac argument 
+    which specifies the percentage of data points nearby that should be considered to fit a regression model.
+
+'''
+
+
+# from statsmodels.nonparametric.smoothers_lowess import lowess
+# plt.rcParams.update({'xtick.bottom' : False, 'axes.titlepad':5})
+
+# # Import
+# df_orig = pd.read_csv('datasets/elecequip.csv', parse_dates=['date'], index_col='date')
+
+# # 1. Moving Average
+# df_ma = df_orig.value.rolling(3, center=True, closed='both').mean()
+
+# # 2. Loess Smoothing (5% and 15%)
+# df_loess_5 = pd.DataFrame(lowess(df_orig.value, np.arange(len(df_orig.value)), frac=0.05)[:, 1], index=df_orig.index, columns=['value'])
+# df_loess_15 = pd.DataFrame(lowess(df_orig.value, np.arange(len(df_orig.value)), frac=0.15)[:, 1], index=df_orig.index, columns=['value'])
+
+# # Plot
+# fig, axes = plt.subplots(4,1, figsize=(7, 7), sharex=True, dpi=120)
+# df_orig['value'].plot(ax=axes[0], color='k', title='Original Series')
+# df_loess_5['value'].plot(ax=axes[1], title='Loess Smoothed 5%')
+# df_loess_15['value'].plot(ax=axes[2], title='Loess Smoothed 15%')
+# df_ma.plot(ax=axes[3], title='Moving Average (3)')
+# fig.suptitle('How to Smoothen a Time Series', y=0.95, fontsize=14)
+# plt.show()
+
+
+'''
+        How to use Granger Causality test to know if one time series is helpful in forecasting another?
+        
+    Granger causality test is used to determine if one time series will be useful to forecast another.
+    
+    How does Granger causality test work?
+    
+    It is based on the idea that if X causes Y, then the forecast of Y based on previous values of Y AND the previous 
+    values of X should outperform the forecast of Y based on previous values of Y alone.
+    
+    So, understand that Granger causality should not be used to test if a lag of Y causes Y. Instead, it is generally 
+    used on exogenous (not Y lag) variables only.
+    
+    It is nicely implemented in the statsmodel package.
+    
+    It accepts a 2D array with 2 columns as the main argument. The values are in the first column and the predictor (X) 
+    is in the second column.
+    
+    The Null hypothesis is: the series in the second column, does not Granger cause the series in the first. 
+    If the P-Values are less than a significance level (0.05) then you reject the null hypothesis and conclude 
+    that the said lag of X is indeed useful.
+    
+    The second argument maxlag says till how many lags of Y should be included in the test.
+    
+    In the above case, the P-Values are Zero for all tests. 
+    So the ‘month’ indeed can be used to forecast the Air Passengers.
+    
+'''
+
+df = pd.read_csv('https://raw.githubusercontent.com/selva86/datasets/master/a10.csv', parse_dates=['date'])
+df['month'] = df.date.dt.month
+result = grangercausalitytests(df[['value', 'month']], maxlag=2)
+print(result)
