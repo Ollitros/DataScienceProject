@@ -83,6 +83,17 @@ def arima_forecast(data):
     p = d = q = range(0, 2)
     pdq = list(itertools.product(p, d, q))
     seasonal_pdq = [(x[0], x[1], x[2], 12) for x in list(itertools.product(p, d, q))]
+    print(data.values)
+
+    # ADF Test
+    from statsmodels.tsa.stattools import adfuller
+    result = adfuller(data.values, autolag='AIC')
+    print(f'ADF Statistic: {result[0]}')
+    print(f'p-value: {result[1]}')
+    for key, value in result[4].items():
+        print('Critial Values:')
+        print(f'   {key}, {value}')
+
 
     for param in pdq:
         for param_seasonal in seasonal_pdq:
