@@ -168,7 +168,7 @@ print(df_reconstructed.head())
  
 '''
 
-image = cv.imread('stationary.png', 0)
+image = cv.imread('data/stationary.png', 0)
 cv.imshow('image', image)
 cv.waitKey(0)
 cv.destroyAllWindows()
