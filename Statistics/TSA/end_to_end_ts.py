@@ -127,9 +127,12 @@ def arima_forecast(data):
     #  To help us understand the accuracy of our forecasts, we compare predicted sales to real
     #  sales of the time series, and we set forecasts to start at 2017–01–01 to the end of the data.
 
+
     pred = results.get_prediction(start=pd.to_datetime('2017-01-01'), dynamic=False)
     pred_ci = pred.conf_int()
     ax = data['2014':].plot(label='observed')
+
+
     pred.predicted_mean.plot(ax=ax, label='One-step ahead Forecast', alpha=.7, figsize=(14, 7))
     ax.fill_between(pred_ci.index,
                     pred_ci.iloc[:, 0],
