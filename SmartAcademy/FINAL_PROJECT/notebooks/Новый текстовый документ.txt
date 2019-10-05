@@ -1,0 +1,4 @@
+1) fix_data
+2) find_out_connections
+3) pre_preprocess
+4) preprocess_data
